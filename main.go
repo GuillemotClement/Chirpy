@@ -16,30 +16,34 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
+	platform       string
 }
 
 func main() {
-	// chargement du fichier .env
+	const port = "8080"
+	const filepathRoot = "./app"
+
 	godotenv.Load()
-	// recuperation de la db url
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
 	}
 
-	// connection db
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatalf("PLATFORM must be set")
+	}
+
 	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)
 	}
 	dbQueries := database.New(dbConn)
 
-	const port = "8080"
-	const filepathRoot = "./app"
-
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             dbQueries, // on rajoute la connection dans la struct
+		platform:       platform,
 	}
 
 	mux := http.NewServeMux()
@@ -47,9 +51,10 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	// methode de la struct. Il faut faire reference a cette struct pour acceder a la methode
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
-
+	mux.HandleFunc("POST /admin/reset", apiCfg.HandlerResetUser)
 	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+	// creation user
+	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
 
 	srv := http.Server{
 		Handler: mux,
