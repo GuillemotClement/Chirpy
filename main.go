@@ -11,6 +11,7 @@ type apiConfig struct {
 }
 
 func main() {
+	const DB_URL = "postgres://clement:postgres@localhost:5432/chirpy"
 	const port = "8080"
 	const filepathRoot = "./app"
 
