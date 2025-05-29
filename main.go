@@ -55,7 +55,9 @@ func main() {
 	// creation user
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
 	// chirps
+	//par convention le nom de la ressource au pluriel
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
+	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsList)
 
 	srv := http.Server{
 		Handler: mux,

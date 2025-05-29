@@ -25,10 +25,6 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		UserID uuid.UUID `json:"user_id"`
 	}
 
-	// type response struct {
-	// 	Chirp
-	// }
-
 	// on recupere le body de la request
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
@@ -90,4 +86,27 @@ func checkLengthChirps(chirps string) error {
 		return errors.New("longueur maximal de caractere depasser")
 	}
 	return nil
+}
+
+func (cfg *apiConfig) handlerChirpsList(w http.ResponseWriter, r *http.Request) {
+
+	dbchirps, err := cfg.db.ListChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get chirps", err)
+		return
+	}
+
+	chirps := []Chirp{}
+
+	for _, dbChirp := range dbchirps {
+		chirps = append(chirps, Chirp{
+			ID:        dbChirp.ID,
+			CreatedAt: dbChirp.CreatedAt,
+			UpdatedAt: dbChirp.UpdatedAt,
+			Body:      dbChirp.Body,
+			UserID:    dbChirp.UserID,
+		})
+	}
+
+	respondWithJSON(w, http.StatusOK, chirps)
 }
