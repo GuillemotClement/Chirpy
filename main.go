@@ -21,10 +21,10 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))) // middleware permet de compter le nombre de request recus
-	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	// methode de la struct. Il faut faire reference a cette struct pour acceder a la methode
-	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("/reset", apiCfg.handlerReset)
+	mux.HandleFunc("GET /api/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("POST /api/reset", apiCfg.handlerReset)
 
 	srv := http.Server{
 		Handler: mux,
