@@ -52,9 +52,10 @@ func main() {
 	// methode de la struct. Il faut faire reference a cette struct pour acceder a la methode
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.HandlerResetUser)
-	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
 	// creation user
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
+	// chirps
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
 
 	srv := http.Server{
 		Handler: mux,
