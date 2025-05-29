@@ -1,40 +1,51 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"sync/atomic"
 )
 
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
+
 func main() {
-	// creation du constante pour le port utiliser
 	const port = "8080"
-	// definis une constante pour le dossier contenant les fichiers statique
 	const filepathRoot = "./app"
 
-	// creation du serveur
+	apiCfg := apiConfig{
+		fileserverHits: atomic.Int32{},
+	}
+
 	mux := http.NewServeMux()
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))) // middleware permet de compter le nombre de request recus
+	mux.HandleFunc("/healthz", handlerReadiness)
+	// methode de la struct. Il faut faire reference a cette struct pour acceder a la methode
+	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("/reset", apiCfg.handlerReset)
 
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
-
-	// ajout d'une nouvelle route
-	// on declare une fonction handler pour gerer la route
-	mux.HandleFunc("/healthz", handleHealthz)
-
-	// parametre du serveur avec la struct
 	srv := http.Server{
-		Handler: mux,        // definition du handler
-		Addr:    ":" + port, // on concatene avec le port pour definir l'adresse
+		Handler: mux,
+		Addr:    ":" + port,
 	}
 
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
-	log.Fatal(srv.ListenAndServe()) // pas besoin de passer le handler et addr qui sont definis dans la struct de parametre
+	log.Fatal(srv.ListenAndServe())
 }
 
-func handleHealthz(w http.ResponseWriter, r *http.Request) {
-	// definir le header
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	// definis le status code => ici 200
+// affiche le nombre de requete recus par le serveur pour le fichier statique
+func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	// ecriture du body
-	w.Write([]byte(http.StatusText(http.StatusOK)))
+	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
+}
+
+// creation du middleware
+func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.fileserverHits.Add(1)
+		next.ServeHTTP(w, r)
+	})
 }
