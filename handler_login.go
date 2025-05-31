@@ -8,7 +8,6 @@ import (
 )
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
-
 	type parameters struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`

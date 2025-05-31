@@ -116,3 +116,9 @@ Pour recupere des valeur
 ```go
 dbURL := os.GetEnv("DB_URL")
 ```
+
+## JWT
+
+```shell
+go get -u github.com/golang-jwt/jwt/v5
+```
